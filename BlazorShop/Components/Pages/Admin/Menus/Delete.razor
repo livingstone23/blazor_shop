@@ -1,0 +1,84 @@
+﻿@page "/menus/delete/{id:int}"
+@using BlazorShop.Models.Db
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components
+@implements IAsyncDisposable
+@inject IDbContextFactory<BlazorShop.Models.Db.OnlineShopContext> DbContextFactory
+@inject NavigationManager Nav
+
+<PageTitle>Delete Menu</PageTitle>
+<h3>Delete</h3>
+
+@if (!string.IsNullOrWhiteSpace(loadError))
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+else if (menu is null)
+{
+    <p>Cargando…</p>
+}
+else
+{
+    <div class="alert alert-warning">
+        ¿Seguro que quieres eliminar este registro?
+    </div>
+
+    <dl class="row">
+        <dt class="col-sm-3">Title</dt>
+        <dd class="col-sm-9">@menu.MenuTitle</dd>
+
+        <dt class="col-sm-3">Link</dt>
+        <dd class="col-sm-9">@menu.Link</dd>
+
+        <dt class="col-sm-3">Type</dt>
+        <dd class="col-sm-9">@menu.Type</dd>
+    </dl>
+
+    <div class="d-flex gap-2">
+        <button class="btn btn-danger" @onclick="DeleteAsync">Delete</button>
+        <a class="btn btn-secondary" href="/menus">Cancel</a>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(deleteError))
+    {
+        <div class="text-danger mt-3">@deleteError</div>
+    }
+}
+
+@code {
+    [Parameter] public int id { get; set; }
+
+    private OnlineShopContext? context;
+    private Menu? menu;
+    private string? loadError;
+    private string? deleteError;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        context ??= await DbContextFactory.CreateDbContextAsync();
+        menu = await context.Menus.FirstOrDefaultAsync(m => m.Id == id);
+        loadError = menu is null ? $"No existe el menú con Id={id}." : null;
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (context is null || menu is null) return;
+
+        try
+        {
+            context.Menus.Remove(menu);
+            await context.SaveChangesAsync();
+            Nav.NavigateTo("/menus");
+        }
+        catch (Exception ex)
+        {
+            deleteError = $"Error eliminando: {ex.Message}";
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (context is IAsyncDisposable ad) await ad.DisposeAsync();
+        else context?.Dispose();
+    }
+}

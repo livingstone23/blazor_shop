@@ -1,0 +1,75 @@
+﻿@page "/menus/create"
+@using BlazorShop.Models.Db
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@implements IAsyncDisposable
+@inject IDbContextFactory<BlazorShop.Models.Db.OnlineShopContext> DbContextFactory
+@inject NavigationManager Nav
+
+<PageTitle>Create Menu</PageTitle>
+<h3>Create</h3>
+
+@if (!string.IsNullOrWhiteSpace(saveError))
+{
+    <div class="alert alert-danger">@saveError</div>
+}
+
+<EditForm Model="menu" OnValidSubmit="CreateAsync" FormName="CreateMenu">
+    
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">Title</label>
+        <InputText class="form-control" @bind-Value="menu.MenuTitle" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Link</label>
+        <InputText class="form-control" @bind-Value="menu.Link" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Type</label>
+        <InputText class="form-control" @bind-Value="menu.Type" />
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Create</button>
+        <a class="btn btn-secondary" href="/menus">Cancel</a>
+    </div>
+</EditForm>
+
+@code {
+    private OnlineShopContext? context;
+    private Menu menu = new();  // entidad nueva
+    private string? saveError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        context = await DbContextFactory.CreateDbContextAsync();
+    }
+
+    private async Task CreateAsync()
+    {
+        if (context is null) return;
+
+        try
+        {
+            context.Menus.Add(menu);
+            await context.SaveChangesAsync();
+            Nav.NavigateTo("/menus");
+        }
+        catch (Exception ex)
+        {
+            saveError = $"Error creando: {ex.Message}";
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (context is IAsyncDisposable ad) await ad.DisposeAsync();
+        else context?.Dispose();
+    }
+}

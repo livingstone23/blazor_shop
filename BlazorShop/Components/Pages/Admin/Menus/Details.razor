@@ -1,0 +1,62 @@
+﻿@page "/menus/details/{id:int}"
+@using BlazorShop.Models.Db
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components
+@implements IAsyncDisposable
+@inject IDbContextFactory<BlazorShop.Models.Db.OnlineShopContext> DbContextFactory
+
+<PageTitle>Menu Details</PageTitle>
+<h3>Details</h3>
+
+@if (!string.IsNullOrWhiteSpace(loadError))
+{
+    <div class="alert alert-danger">@loadError</div>
+    <a class="btn btn-secondary mt-2" href="/menus">Back</a>
+}
+else if (menu is null)
+{
+    <p>Cargando…</p>
+}
+else
+{
+    <dl class="row">
+        <dt class="col-sm-3">Id</dt>
+        <dd class="col-sm-9">@menu.Id</dd>
+
+        <dt class="col-sm-3">Title</dt>
+        <dd class="col-sm-9">@menu.MenuTitle</dd>
+
+        <dt class="col-sm-3">Link</dt>
+        <dd class="col-sm-9">@menu.Link</dd>
+
+        <dt class="col-sm-3">Type</dt>
+        <dd class="col-sm-9">@menu.Type</dd>
+    </dl>
+
+    <div class="d-flex gap-2">
+        <a class="btn btn-primary" href="@($"/menus/edit/{menu.Id}")">Edit</a>
+        <a class="btn btn-outline-danger" href="@($"/menus/delete/{menu.Id}")">Delete</a>
+        <a class="btn btn-secondary" href="/menus">Back</a>
+    </div>
+}
+
+@code {
+    [Parameter] public int id { get; set; }
+
+    private OnlineShopContext? context;
+    private Menu? menu;
+    private string? loadError;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        context ??= await DbContextFactory.CreateDbContextAsync();
+        menu = await context.Menus.AsNoTracking().FirstOrDefaultAsync(m => m.Id == id);
+        loadError = menu is null ? $"No existe el menú con Id={id}." : null;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (context is IAsyncDisposable ad) await ad.DisposeAsync();
+        else context?.Dispose();
+    }
+}

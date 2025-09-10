@@ -1,0 +1,11 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      { "name": ".NET Launch",
+        "type": "coreclr", "request": "launch",
+        "program": "${workspaceFolder}/bin/Debug/net9.0/Blazorshop.dll",
+        "cwd": "${workspaceFolder}", "preLaunchTask": "watch",
+        "env": { "ASPNETCORE_ENVIRONMENT": "Development" } }
+    ]
+  }
+  

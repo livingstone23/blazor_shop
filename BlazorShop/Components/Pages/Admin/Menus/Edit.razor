@@ -1,0 +1,100 @@
+﻿@page "/menus/edit/{id:int}"
+@using BlazorShop.Models.Db
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@implements IAsyncDisposable
+@inject IDbContextFactory<BlazorShop.Models.Db.OnlineShopContext> DbContextFactory
+@inject NavigationManager Nav
+
+<PageTitle>Edit Menu</PageTitle>
+<h3>Edit</h3>
+
+@if (!string.IsNullOrWhiteSpace(loadError))
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+else if (menu is null)
+{
+    <p>Cargando…</p>
+}
+else
+{
+    <EditForm Model="menu" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label class="form-label">Title</label>
+            <InputText class="form-control" @bind-Value="menu.MenuTitle" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Link</label>
+            <InputText class="form-control" @bind-Value="menu.Link" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Type</label>
+            <InputText class="form-control" @bind-Value="menu.Type" />
+        </div>
+
+
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a class="btn btn-secondary" href="/menus">Cancel</a>
+        </div>
+
+
+        @if (!string.IsNullOrWhiteSpace(saveError))
+        {
+            <div class="text-danger mt-3">@saveError</div>
+        }
+    </EditForm>
+}
+
+@code {
+    // Parámetro de ruta: /menus/edit/123
+    [Parameter] public int id { get; set; }
+
+    private OnlineShopContext? context;
+    private Menu? menu;
+    private string? loadError;
+    private string? saveError;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        context ??= await DbContextFactory.CreateDbContextAsync();
+        menu = await context.Menus.FirstOrDefaultAsync(m => m.Id == id);
+        if (menu is null)
+            loadError = $"No existe el menú con Id={id}.";
+        else
+            loadError = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (context is null || menu is null) return;
+
+        try
+        {
+            await context.SaveChangesAsync(); // entidad trackeada
+            Nav.NavigateTo("/menus");
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            saveError = "Concurrencia detectada. Actualiza y vuelve a intentar.";
+        }
+        catch (Exception ex)
+        {
+            saveError = $"Error guardando: {ex.Message}";
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (context is IAsyncDisposable ad) await ad.DisposeAsync();
+        else context?.Dispose();
+    }
+}

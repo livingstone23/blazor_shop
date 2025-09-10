@@ -1,0 +1,46 @@
+﻿@page "/menus"
+@using BlazorShop.Models.Db
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@implements IAsyncDisposable
+@inject IDbContextFactory<BlazorShop.Models.Db.OnlineShopContext> DbContextFactory
+
+<PageTitle>Menu Index</PageTitle>
+
+<h1>Menus Index</h1>
+
+<p>
+    <a class="btn btn-info p-1" href="menus/create">Create New</a>
+</p>
+
+
+<QuickGrid class="table" Items="context.Menus">
+    <PropertyColumn Property="menu => menu.MenuTitle" />
+    <PropertyColumn Property="menu => menu.Link" />
+    <PropertyColumn Property="menu => menu.Type" />
+    
+    <TemplateColumn Context="menu">
+        <a class="btn btn-info p-1" href="@($"/menus/edit/{menu.Id}")">Edit</a> |
+        <a class="btn btn- p-1" href="@($"/menus/details/{menu.Id}")">Details</a> |
+        <a class="btn btn-danger p-1" href="@($"/menus/delete/{menu.Id}")">Delete</a>
+
+    </TemplateColumn>
+    
+</QuickGrid>
+
+
+@code {
+
+    private OnlineShopContext? context;
+
+    protected override async Task OnInitializedAsync()
+    {
+        context = await DbContextFactory.CreateDbContextAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // TODO release managed resources here
+    }
+
+}
