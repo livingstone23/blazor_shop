@@ -1,90 +1,86 @@
 ﻿@page "/menus/edit/{id:int}"
+@rendermode InteractiveServer
 @using BlazorShop.Models.Db
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Forms
-@implements IAsyncDisposable
-@inject IDbContextFactory<BlazorShop.Models.Db.OnlineShopContext> DbContextFactory
+@inject IDbContextFactory<OnlineShopContext> DbContextFactory
 @inject NavigationManager Nav
+@implements IAsyncDisposable
 
-<PageTitle>Edit Menu</PageTitle>
 <h3>Edit</h3>
 
-@if (!string.IsNullOrWhiteSpace(loadError))
+@if (!string.IsNullOrWhiteSpace(saveError))
 {
-    <div class="alert alert-danger">@loadError</div>
+    <div class="alert alert-danger">@saveError</div>
 }
-else if (menu is null)
+
+@if (menu is not null)
 {
-    <p>Cargando…</p>
-}
-else
-{
-    <EditForm Model="menu" OnValidSubmit="SaveAsync">
+    <EditForm Model="menu" OnValidSubmit="UpdateAsync">
         <DataAnnotationsValidator />
         <ValidationSummary />
+
+        <!-- El Id debe viajar en el modelo -->
+        @* <InputHidden @bind-Value="menu.Id" /> *@
 
         <div class="mb-3">
             <label class="form-label">Title</label>
             <InputText class="form-control" @bind-Value="menu.MenuTitle" />
+            <ValidationMessage For="() => menu.MenuTitle" />
         </div>
 
         <div class="mb-3">
             <label class="form-label">Link</label>
             <InputText class="form-control" @bind-Value="menu.Link" />
+            <ValidationMessage For="() => menu.Link" />
         </div>
 
         <div class="mb-3">
             <label class="form-label">Type</label>
             <InputText class="form-control" @bind-Value="menu.Type" />
+            <ValidationMessage For="() => menu.Type" />
         </div>
-
-
 
         <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary">Save</button>
-            <a class="btn btn-secondary" href="/menus">Cancel</a>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <a class="btn btn-secondary" href="/menus">Cancelar</a>
         </div>
-
-
-        @if (!string.IsNullOrWhiteSpace(saveError))
-        {
-            <div class="text-danger mt-3">@saveError</div>
-        }
     </EditForm>
+}
+else
+{
+    <p>Cargando…</p>
 }
 
 @code {
-    // Parámetro de ruta: /menus/edit/123
     [Parameter] public int id { get; set; }
 
     private OnlineShopContext? context;
     private Menu? menu;
-    private string? loadError;
     private string? saveError;
 
-    protected override async Task OnParametersSetAsync()
+    protected override async Task OnInitializedAsync()
     {
-        context ??= await DbContextFactory.CreateDbContextAsync();
-        menu = await context.Menus.FirstOrDefaultAsync(m => m.Id == id);
+        context = await DbContextFactory.CreateDbContextAsync();
+        menu = await context.Menus.FindAsync(id);
         if (menu is null)
-            loadError = $"No existe el menú con Id={id}.";
-        else
-            loadError = null;
+        {
+            saveError = $"No se encontró el menú {id}.";
+        }
     }
 
-    private async Task SaveAsync()
+    private async Task UpdateAsync()
     {
         if (context is null || menu is null) return;
 
         try
         {
-            await context.SaveChangesAsync(); // entidad trackeada
+            await context.SaveChangesAsync();   // listo
             Nav.NavigateTo("/menus");
         }
-        catch (DbUpdateConcurrencyException)
+        catch (DbUpdateConcurrencyException ex)
         {
-            saveError = "Concurrencia detectada. Actualiza y vuelve a intentar.";
+            saveError = $"Conflicto de concurrencia: {ex.Message}";
         }
         catch (Exception ex)
         {

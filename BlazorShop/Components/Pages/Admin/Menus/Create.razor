@@ -6,6 +6,7 @@
 @implements IAsyncDisposable
 @inject IDbContextFactory<BlazorShop.Models.Db.OnlineShopContext> DbContextFactory
 @inject NavigationManager Nav
+@rendermode InteractiveServer
 
 <PageTitle>Create Menu</PageTitle>
 <h3>Create</h3>
@@ -15,7 +16,8 @@
     <div class="alert alert-danger">@saveError</div>
 }
 
-<EditForm Model="menu" OnValidSubmit="CreateAsync" FormName="CreateMenu">
+<EditForm Model="menu" 
+          OnValidSubmit="CreateAsync" >
     
     <DataAnnotationsValidator />
     <ValidationSummary />

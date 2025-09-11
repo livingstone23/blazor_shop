@@ -1,10 +1,10 @@
 ﻿@page "/menus/delete/{id:int}"
+@rendermode InteractiveServer
 @using BlazorShop.Models.Db
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Components
-@implements IAsyncDisposable
-@inject IDbContextFactory<BlazorShop.Models.Db.OnlineShopContext> DbContextFactory
+@inject IDbContextFactory<OnlineShopContext> DbContextFactory
 @inject NavigationManager Nav
+@implements IAsyncDisposable
 
 <PageTitle>Delete Menu</PageTitle>
 <h3>Delete</h3>
@@ -19,9 +19,7 @@ else if (menu is null)
 }
 else
 {
-    <div class="alert alert-warning">
-        ¿Seguro que quieres eliminar este registro?
-    </div>
+    <div class="alert alert-warning">¿Seguro que quieres eliminar este registro?</div>
 
     <dl class="row">
         <dt class="col-sm-3">Title</dt>
@@ -35,7 +33,9 @@ else
     </dl>
 
     <div class="d-flex gap-2">
-        <button class="btn btn-danger" @onclick="DeleteAsync">Delete</button>
+        <button class="btn btn-danger" @onclick="DeleteAsync" disabled="@isDeleting">
+            @(isDeleting ? "Eliminando..." : "Delete")
+        </button>
         <a class="btn btn-secondary" href="/menus">Cancel</a>
     </div>
 
@@ -52,11 +52,12 @@ else
     private Menu? menu;
     private string? loadError;
     private string? deleteError;
+    private bool isDeleting;
 
     protected override async Task OnParametersSetAsync()
     {
         context ??= await DbContextFactory.CreateDbContextAsync();
-        menu = await context.Menus.FirstOrDefaultAsync(m => m.Id == id);
+        menu = await context.Menus.FindAsync(id);
         loadError = menu is null ? $"No existe el menú con Id={id}." : null;
     }
 
@@ -66,13 +67,25 @@ else
 
         try
         {
+            isDeleting = true;
             context.Menus.Remove(menu);
             await context.SaveChangesAsync();
-            Nav.NavigateTo("/menus");
+            Nav.NavigateTo("/menus", forceLoad: true);
+        }
+        catch (DbUpdateException ex)
+        {
+            // Mensaje más amable si hay restricción FK (menú en uso)
+            deleteError = ex.InnerException?.Message?.Contains("FOREIGN KEY") == true
+                ? "No se puede eliminar: el menú está en uso por otros registros."
+                : $"Error eliminando: {ex.Message}";
         }
         catch (Exception ex)
         {
             deleteError = $"Error eliminando: {ex.Message}";
+        }
+        finally
+        {
+            isDeleting = false;
         }
     }
 
