@@ -1,0 +1,143 @@
+﻿@page "/banners/edit/{id:int}"
+@rendermode InteractiveServer
+@using BlazorShop.Models.Db
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Forms
+@inject IDbContextFactory<OnlineShopContext> DbContextFactory
+@inject NavigationManager Nav
+@implements IAsyncDisposable
+
+<h3>Edit</h3>
+
+@if (!string.IsNullOrWhiteSpace(saveError))
+{
+    <div class="alert alert-danger">@saveError</div>
+}
+
+@if (banner is not null)
+{
+    <EditForm Model="banner" OnValidSubmit="UpdateAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary role="alert" />
+
+        @* El Id viaja en el modelo; si quieres forzarlo, descomenta:
+           <InputHidden @bind-Value="banner.Id" /> *@
+
+        <div class="mb-3">
+            <label for="title" class="form-label">Title:</label>
+            <InputTextArea id="title" rows="4" class="form-control" @bind-Value="banner.Title" />
+            <ValidationMessage For="() => banner.Title" />
+        </div>
+
+        <div class="mb-3">
+            <label for="subtitle" class="form-label">SubTitle:</label>
+            <InputTextArea id="subtitle" rows="4" class="form-control" @bind-Value="banner.SubTitle" />
+            <ValidationMessage For="() => banner.SubTitle" />
+        </div>
+
+        <div class="mb-3">
+            <label for="imagename" class="form-label">ImageName:</label>
+            <InputText id="imagename" class="form-control" @bind-Value="banner.ImageName" />
+            <ValidationMessage For="() => banner.ImageName" />
+        </div>
+
+        <div class="mb-3">
+            <label for="priority" class="form-label">Priority:</label>
+            <InputNumber id="priority" class="form-control" @bind-Value="banner.Priority" />
+            <ValidationMessage For="() => banner.Priority" />
+        </div>
+
+        <div class="mb-3">
+            <label for="link" class="form-label">Link:</label>
+            <InputText id="link" class="form-control" @bind-Value="banner.Link" />
+            <ValidationMessage For="() => banner.Link" />
+        </div>
+
+        <div class="mb-3">
+            <label for="position" class="form-label">Position:</label>
+            <InputSelect id="position" class="form-control" @bind-Value="banner.Position">
+                <option value="">-- Selecciona el tipo --</option>
+                <option value="Slider">Slider</option>
+                <option value="Banner1">Banner1</option>
+                <option value="Banner2">Banner2</option>
+            </InputSelect>
+            <ValidationMessage For="() => banner.Position" />
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <a class="btn btn-secondary" href="/banners">Cancelar</a>
+        </div>
+    </EditForm>
+}
+else
+{
+    <p>Cargando…</p>
+}
+
+@code {
+    [Parameter] public int id { get; set; }
+
+    private OnlineShopContext? context;
+    private Banner? banner;
+    private string? saveError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        context = await DbContextFactory.CreateDbContextAsync();
+        banner = await context.Banners.FindAsync(id);
+
+        if (banner is null)
+        {
+            saveError = $"No se encontró el banner {id}.";
+            return;
+        }
+
+        // Normaliza para que case con el <InputSelect>
+        banner.Position = NormalizePosition(banner.Position);
+        if (banner.Position is not ("Slider" or "Banner1" or "Banner2"))
+            banner.Position = ""; // deja el placeholder seleccionado
+    }
+
+    private static string NormalizePosition(string? p)
+    {
+        if (string.IsNullOrWhiteSpace(p)) return "";
+        var clean = new string(p.Trim().ToLowerInvariant()
+            .Where(ch => !char.IsWhiteSpace(ch) && ch != '-' && ch != '_').ToArray());
+
+        return clean switch
+        {
+            "slider" => "Slider",
+            "banner1" => "Banner1",
+            "banner01" => "Banner1",
+            "banner2" => "Banner2",
+            "banner02" => "Banner2",
+            _ => ""
+        };
+    }
+
+    private async Task UpdateAsync()
+    {
+        if (context is null || banner is null) return;
+
+        try
+        {
+            await context.SaveChangesAsync();
+            Nav.NavigateTo("/banners");
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            saveError = $"Conflicto de concurrencia: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            saveError = $"Error guardando: {ex.Message}";
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (context is IAsyncDisposable ad) await ad.DisposeAsync();
+        else context?.Dispose();
+    }
+}

@@ -9,6 +9,7 @@
 @rendermode InteractiveServer
 
 <PageTitle>Create Menu</PageTitle>
+
 <h3>Create</h3>
 
 @if (!string.IsNullOrWhiteSpace(saveError))
@@ -23,18 +24,28 @@
     <ValidationSummary />
 
     <div class="mb-3">
-        <label class="form-label">Title</label>
-        <InputText class="form-control" @bind-Value="menu.MenuTitle" />
+        <label class="form-label">Title:</label>
+        <InputText id="menutitle" class="form-control" @bind-Value="menu.MenuTitle" />
+        <ValidationMessage For="() => menu.MenuTitle" class="text-danger" />
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Link</label>
-        <InputText class="form-control" @bind-Value="menu.Link" />
+        <label class="form-label">Link:</label>
+        <InputText id="link" class="form-control" @bind-Value="menu.Link" />
+        <ValidationMessage For="()=> menu.Link" class="text-danger"/>
+
     </div>
 
     <div class="mb-3">
-        <label class="form-label">Type</label>
-        <InputText class="form-control" @bind-Value="menu.Type" />
+        <label class="form-label">Type:</label>
+      
+        <InputSelect id="type" class="form-control" @bind-Value="menu.Type">
+            <option value="">-- Selecciona el tipo --</option>
+            <option value="Top">Top</option>
+            <option value="Bottom">Bottom</option>
+        </InputSelect>
+
+        <ValidationMessage For="() => menu.Type" class="text-danger" />
     </div>
 
     <div class="d-flex gap-2">
@@ -44,8 +55,12 @@
 </EditForm>
 
 @code {
+
     private OnlineShopContext? context;
-    private Menu menu = new();  // entidad nueva
+
+    [SupplyParameterFromForm] 
+    private Menu menu { get; set; } = new(); // entidad nueva
+    
     private string? saveError;
 
     protected override async Task OnInitializedAsync()

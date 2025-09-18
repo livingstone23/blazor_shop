@@ -3,12 +3,15 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 
+
 namespace BlazorShop.Models.Db;
+
 
 
 [Keyless]
 public partial class Menu
 {
+
     //Registro la propiedad Id como llave primaria
     [Key]
     [Column("ID")]
@@ -28,5 +31,6 @@ public partial class Menu
     [StringLength(20)]
     //Registro la propiedad requerida y envio un mensaje personalizado
     [Required(ErrorMessage = "El campo Type es obligatorio")]
-    public string? Type { get; set; }
+    public string Type { get; set; }
+
 }

@@ -18,26 +18,35 @@
 {
     <EditForm Model="menu" OnValidSubmit="UpdateAsync">
         <DataAnnotationsValidator />
-        <ValidationSummary />
+        <ValidationSummary role="alert"/>
 
         <!-- El Id debe viajar en el modelo -->
         @* <InputHidden @bind-Value="menu.Id" /> *@
+        
 
         <div class="mb-3">
-            <label class="form-label">Title</label>
-            <InputText class="form-control" @bind-Value="menu.MenuTitle" />
+            <label for="menutitle" class="form-label">MenuTitle:</label>
+            <InputText id="menutitle" class="form-control" @bind-Value="menu.MenuTitle" />
             <ValidationMessage For="() => menu.MenuTitle" />
         </div>
 
         <div class="mb-3">
-            <label class="form-label">Link</label>
-            <InputText class="form-control" @bind-Value="menu.Link" />
+            <label for="link" class="form-label">Link:</label>
+            <InputText id="link" class="form-control" @bind-Value="menu.Link" />
             <ValidationMessage For="() => menu.Link" />
         </div>
 
         <div class="mb-3">
-            <label class="form-label">Type</label>
-            <InputText class="form-control" @bind-Value="menu.Type" />
+            <label for="type" class="form-label">Type:</label>
+
+            <InputSelect id="type" class="form-control" @bind-Value="menu.Type">
+                @*  <option value="Top" selected="@((Menu.Type=="Top") ? "selected": null)">Top</option>
+                <option value="Bottom" selected="@((Menu.Type == "Bottom") ? "selected" : null)">Bottom</option> *@
+                <option value="">-- Selecciona el tipo --</option>
+                <option value="Top" >Top</option>
+                <option value="Bottom" >Bottom</option>
+            </InputSelect>
+
             <ValidationMessage For="() => menu.Type" />
         </div>
 

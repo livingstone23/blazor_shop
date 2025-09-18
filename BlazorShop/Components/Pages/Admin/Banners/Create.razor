@@ -1,0 +1,101 @@
+﻿@page "/banners/create"
+@rendermode InteractiveServer
+@using BlazorShop.Models.Db
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Forms
+@inject IDbContextFactory<OnlineShopContext> DbContextFactory
+@inject NavigationManager Nav
+@implements IAsyncDisposable
+
+<PageTitle>Create Banner</PageTitle>
+
+<h3>Create Banner</h3>
+
+@if (!string.IsNullOrWhiteSpace(saveError))
+{
+    <div class="alert alert-danger">@saveError</div>
+}
+
+<EditForm Model="banner" OnValidSubmit="CreateAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary role="alert" />
+
+    <div class="mb-3">
+        <label for="title" class="form-label">Title:</label>
+        <InputTextArea id="title" rows="4" class="form-control" @bind-Value="banner.Title" />
+        <ValidationMessage For="() => banner.Title" />
+    </div>
+
+    <div class="mb-3">
+        <label for="subtitle" class="form-label">SubTitle:</label>
+        <InputTextArea id="subtitle" rows="4" class="form-control" @bind-Value="banner.SubTitle" />
+        <ValidationMessage For="() => banner.SubTitle" />
+    </div>
+
+    <div class="mb-3">
+        <label for="imagename" class="form-label">ImageName:</label>
+        <InputText id="imagename" class="form-control" @bind-Value="banner.ImageName" />
+        <ValidationMessage For="() => banner.ImageName" />
+    </div>
+
+    <div class="mb-3">
+        <label for="priority" class="form-label">Priority:</label>
+        <InputNumber id="priority" class="form-control" @bind-Value="banner.Priority" />
+        <ValidationMessage For="() => banner.Priority" />
+    </div>
+
+    <div class="mb-3">
+        <label for="link" class="form-label">Link:</label>
+        <InputText id="link" class="form-control" @bind-Value="banner.Link" />
+        <ValidationMessage For="() => banner.Link" />
+    </div>
+
+    <div class="mb-3">
+        <label for="position" class="form-label">Position:</label>
+        <InputSelect id="position" class="form-control" @bind-Value="banner.Position">
+            <option value="">-- Selecciona el tipo --</option>
+            <option value="Slider">Slider</option>
+            <option value="Banner1">Banner1</option>
+            <option value="Banner2">Banner2</option>
+        </InputSelect>
+        <ValidationMessage For="() => banner.Position" />
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <a class="btn btn-secondary" href="/banners">Cancelar</a>
+    </div>
+</EditForm>
+
+@code {
+    private OnlineShopContext? context;
+    private Banner banner = new(); // 👈 Nuevo objeto vacío
+    private string? saveError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        context = await DbContextFactory.CreateDbContextAsync();
+    }
+
+    private async Task CreateAsync()
+    {
+        if (context is null) return;
+
+        try
+        {
+            context.Banners.Add(banner); // 👈 Se agrega el nuevo
+            await context.SaveChangesAsync();
+            Nav.NavigateTo("/banners");
+        }
+        catch (Exception ex)
+        {
+            saveError = $"Error guardando: {ex.Message}";
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (context is IAsyncDisposable ad) await ad.DisposeAsync();
+        else context?.Dispose();
+    }
+}
